@@ -1,0 +1,32 @@
+"""
+config.py — All credentials and settings in one place.
+"""
+
+import os
+
+# ── Twilio (phone calls) ──────────────────────────────────────────
+TWILIO_ACCOUNT_SID  = os.getenv("TWILIO_ACCOUNT_SID",  "AC79aa99f1806978009e27aaa059228aa9")
+TWILIO_AUTH_TOKEN   = os.getenv("TWILIO_AUTH_TOKEN",    "fd943dd5fdbc626701d790c6c306dc36")
+TWILIO_FROM_NUMBER  = os.getenv("TWILIO_FROM_NUMBER",   "+19152283121")
+
+# ── Gmail SMTP (email) ────────────────────────────────────────────
+GMAIL_ADDRESS       = os.getenv("GMAIL_ADDRESS",        "lakshmideepakb@gmail.com")
+GMAIL_APP_PASSWORD  = os.getenv("GMAIL_APP_PASSWORD",   "jxtk wadn dvoy guvc")
+
+# - Test Mobile----------
+TEST_MOBILE         = os.getenv("TEST_MOBILE",         "+919176960154")
+# ── Groq (Whisper transcription + LLM) ───────────────────────────
+GROQ_API_KEY        = os.getenv("GROQ_API_KEY",         "gsk_REDACTED")
+
+# ── LLM model ────────────────────────────────────────────────────
+LLM_MODEL           = "llama-3.3-70b-versatile"   # free on Groq, fast and accurate
+LLM_TEMPERATURE     = 0                   # deterministic — same input = same decision
+
+# ── Business rules ────────────────────────────────────────────────
+from datetime import datetime
+BIRTH_CUTOFF        = datetime(2000, 1, 1)   # process only born after this date
+TERM_DATE_CUTOFF    = datetime(2023, 1, 1)   # DQ if terminated before this date
+
+# ── Files ─────────────────────────────────────────────────────────
+INPUT_FILE          = "sample_data.xlsx"
+OUTPUT_FILE         = "sample_data.xlsx"     # write results back to same file

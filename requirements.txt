@@ -2,3 +2,8 @@ pandas
 twilio
 openpyxl
 groq
+langchain
+langgraph
+langchain-groq
+langchain-core
+
