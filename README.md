@@ -1,4 +1,4 @@
-# Employee Agent POC
+# Employee Agent POC using Langgraph/Langchain
 
 An AI-powered HR automation agent that reads employee data from Excel, applies business rules via a **LangGraph state machine**, makes outbound phone calls with **Twilio**, transcribes responses using **Groq Whisper**, and sends follow-up emails via **Gmail SMTP** — writing all results back into the same Excel file.
 
