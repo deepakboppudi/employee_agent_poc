@@ -2,7 +2,7 @@
 
 ## What this does
 
-Reads employee Excel data → applies the business logic → AI phone call + voice transcription + email → writes results back into the same Excel file.
+Reads employee Excel data → applies flowchart logic → AI phone call + voice transcription + email → writes results back into the same Excel file.
 
 ```
 Read Excel → Born after 01-01-2000?
@@ -53,7 +53,7 @@ pip install twilio groq pandas openpyxl requests
 **Verify your Indian test number (required for trial accounts):**
 1. Go to: https://console.twilio.com/us1/develop/phone-numbers/manage/verified
 2. Click **"Add a new Caller ID"**
-3. Enter `+919176960154` → verify via OTP call or SMS
+3. Enter `+91XXXXXXXXXX` → verify via OTP call or SMS
 
 > ⚠️ Twilio trial plays *"This call is from a Twilio trial account, press any key to continue"* before your prompt. This is expected — just wait and press any key when you pick up.
 
@@ -95,7 +95,7 @@ export TWILIO_FROM_NUMBER="+1XXXXXXXXXX"
 
 export GROQ_API_KEY="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-export GMAIL_ADDRESS="lakshmideepakb@gmail.com"
+export GMAIL_ADDRESS="your-email@gmail.com"
 export GMAIL_APP_PASSWORD="abcd efgh ijkl mnop"
 ```
 
@@ -107,7 +107,7 @@ $env:TWILIO_FROM_NUMBER="+1XXXXXXXXXX"
 
 $env:GROQ_API_KEY="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-$env:GMAIL_ADDRESS="lakshmideepakb@gmail.com"
+$env:GMAIL_ADDRESS="your-email@gmail.com"
 $env:GMAIL_APP_PASSWORD="abcd efgh ijkl mnop"
 ```
 
@@ -117,7 +117,7 @@ $env:GMAIL_APP_PASSWORD="abcd efgh ijkl mnop"
 
 ```
 your-folder/
-├── poc_agent.py
+├── main.py
 └── sample_data.xlsx
 ```
 
@@ -127,14 +127,14 @@ your-folder/
 
 ```bash
 # Test email only
-python poc_agent.py --test-email
+python main.py --test-email
 
 # Test call only
-python poc_agent.py --test-call
+python main.py --test-call
 ```
 
 **What to expect on --test-call:**
-1. Your phone (`+919176960154`) will ring
+1. Your phone (`+91XXXXXXXXXX`) will ring
 2. Pick up → hear Twilio trial disclaimer → press any key
 3. Wait 2 seconds → hear the HR prompt
 4. Hear a beep → speak your response
@@ -146,7 +146,7 @@ python poc_agent.py --test-call
 ## Step 8 — Run the full flow
 
 ```bash
-python poc_agent.py
+python main.py
 ```
 
 **Expected terminal output:**
@@ -154,18 +154,18 @@ python poc_agent.py
 Reading Excel file...
   Loaded 20 records
 
-  ✅ Dale Fowler → DisQualified (terminated before 2023)
+  ✅ John Doe → DisQualified (terminated before 2023)
 
-  ✅ Frank Fuhlroth → Terminated after 2023, initiating call + email
+  ✅ Jane Smith → Terminated after 2023, initiating call + email
      Trying port 587 STARTTLS...
      ✅ Email sent successfully
-     📞 Calling Frank Fuhlroth at +919176960154...
+     📞 Calling Jane Smith at +91XXXXXXXXXX...
      Call status: completed
      Recording downloaded (49 KB)
      Sending to Groq Whisper for transcription...
      ✅ Groq Whisper transcript: I am available next week...
 
-  ✅ Ken Chambers → Terminated after 2023, initiating call + email
+  ✅ Bob Johnson → Terminated after 2023, initiating call + email
      ...
 
 ==================================================
@@ -181,7 +181,7 @@ Reading Excel file...
 
 ## Switching test → production
 
-In `poc_agent.py`, swap these 2 lines inside `process_records()`:
+In `main.py`, swap these 2 lines inside `process_records()`:
 
 ```python
 # Currently (test mode)
@@ -207,13 +207,10 @@ email_result = send_email(row["EMAIL"], name)
 | `Twilio auth error` | Wrong SID or token | Double check console.twilio.com credentials |
 
 ---
-
-## Interview talking points
-
-- **Twilio TwiML**: XML instruction set telling Twilio what to do during the call — `<Say>`, `<Record>`, `<Pause>`
-- **finishOnKey=""**: Prevents any keypress from ending the recording (fixes free trial disclaimer issue)
-- **Groq Whisper**: Runs `whisper-large-v3` — same model as OpenAI but free; downloads Twilio MP3 and transcribes it
-- **Gmail SMTP**: Python built-in `smtplib`, auto-fallback from port 587 → 465 if network blocks it
-- **openpyxl append-only**: Opens original file and only writes new columns — zero impact on existing data, formats, or NULLs
-- **Retry logic**: Both Groq (503) and SMTP (port fallback) handle transient failures gracefully
-- **Test mode**: Single variable swap `TEST_PHONE` / `TEST_EMAIL` → `row["WORK_PHONE"]` / `row["EMAIL"]` to go live
+## Next steps
+- Add logging to a file for better debugging 
+- Handle edge cases (e.g. invalid phone numbers, email sending failures)
+- Add retry logic for transient errors (e.g. network issues, Groq timeouts)
+- Expand flowchart logic (e.g. different email templates based on termination reason)
+- Add concurrency for faster processing of large Excel files
+   

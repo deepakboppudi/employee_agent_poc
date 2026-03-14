@@ -33,18 +33,18 @@ from openpyxl import load_workbook
 # ─────────────────────────────────────────────────────────────────
 # CONFIG  ← set as env vars or hardcode here for POC
 # ─────────────────────────────────────────────────────────────────
-TWILIO_ACCOUNT_SID  = os.getenv("TWILIO_ACCOUNT_SID",  "AC79aa99f1806978009e27aaa059228aa9")
-TWILIO_AUTH_TOKEN   = os.getenv("TWILIO_AUTH_TOKEN",   "fd943dd5fdbc626701d790c6c306dc36")
-TWILIO_FROM_NUMBER  = os.getenv("TWILIO_FROM_NUMBER",  "+19152283121")   # your Twilio number
+TWILIO_ACCOUNT_SID  = os.getenv("TWILIO_ACCOUNT_SID",  "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+TWILIO_AUTH_TOKEN   = os.getenv("TWILIO_AUTH_TOKEN",   "your_auth_token")
+TWILIO_FROM_NUMBER  = os.getenv("TWILIO_FROM_NUMBER",  "+1XXXXXXXXXX")
 
-GMAIL_ADDRESS       = os.getenv("GMAIL_ADDRESS",       "lakshmideepakb@gmail.com")
-GMAIL_APP_PASSWORD  = os.getenv("GMAIL_APP_PASSWORD",  "jxtk wadn dvoy guvc")  # 16-char app password
+GMAIL_ADDRESS       = os.getenv("GMAIL_ADDRESS",       "your-email@gmail.com")
+GMAIL_APP_PASSWORD  = os.getenv("GMAIL_APP_PASSWORD",  "xxxx xxxx xxxx xxxx")
 
-GROQ_API_KEY        = os.getenv("GROQ_API_KEY")  # Remove default - set via environment variable
+GROQ_API_KEY        = os.getenv("GROQ_API_KEY",        "gsk_xxxxxxxxxxxxxxxxxxxxxxxxxx")
 
 # ── Test targets ──────────────────────────────────────────────────
-TEST_PHONE = "+919176960154"
-TEST_EMAIL = "lakshmideepakb@gmail.com"
+TEST_PHONE = "+91XXXXXXXXXX"
+TEST_EMAIL = "your-email@gmail.com"
 
 INPUT_FILE  = "sample_data.xlsx"
 OUTPUT_FILE = "sample_data.xlsx"   # write results back into the same input file
@@ -368,10 +368,10 @@ def process_records():
 if __name__ == "__main__":
     if "--test-email" in sys.argv:
         print("=== EMAIL TEST ===")
-        send_email(TEST_EMAIL, "Deepak")
+        send_email(TEST_EMAIL, "Test User")
     elif "--test-call" in sys.argv:
         print("=== CALL TEST ===")
-        result = make_call_and_transcribe(TEST_PHONE, "Deepak")
+        result = make_call_and_transcribe(TEST_PHONE, "Test User")
         print(f"\nFinal result: {result}")
     else:
         process_records()
