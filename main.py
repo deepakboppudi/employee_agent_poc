@@ -40,7 +40,7 @@ TWILIO_FROM_NUMBER  = os.getenv("TWILIO_FROM_NUMBER",  "+19152283121")   # your 
 GMAIL_ADDRESS       = os.getenv("GMAIL_ADDRESS",       "lakshmideepakb@gmail.com")
 GMAIL_APP_PASSWORD  = os.getenv("GMAIL_APP_PASSWORD",  "jxtk wadn dvoy guvc")  # 16-char app password
 
-GROQ_API_KEY        = os.getenv("GROQ_API_KEY")
+GROQ_API_KEY        = os.getenv("GROQ_API_KEY")  # Remove default - set via environment variable
 
 # ── Test targets ──────────────────────────────────────────────────
 TEST_PHONE = "+919176960154"
