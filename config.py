@@ -14,8 +14,7 @@ GMAIL_ADDRESS       = os.getenv("GMAIL_ADDRESS",        "xxxxxx@gmail.com")
 GMAIL_APP_PASSWORD  = os.getenv("GMAIL_APP_PASSWORD",   "xxxx xxxx xxxx xxx")
 
 # ── Groq (Whisper transcription + LLM) ───────────────────────────
-GROQ_API_KEY        = os.getenv("GROQ_API_KEY")
-# ── LLM model ────────────────────────────────────────────────────
+GROQ_API_KEY        = os.getenv("GROQ_API_KEY")# ── LLM model ────────────────────────────────────────────────────
 LLM_MODEL           = "llama-3.3-70b-versatile"   # free on Groq, fast and accurate
 LLM_TEMPERATURE     = 0                   # deterministic — same input = same decision
 
