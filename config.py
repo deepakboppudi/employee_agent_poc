@@ -5,19 +5,16 @@ config.py — All credentials and settings in one place.
 import os
 
 # ── Twilio (phone calls) ──────────────────────────────────────────
-TWILIO_ACCOUNT_SID  = os.getenv("TWILIO_ACCOUNT_SID",  "AC79aa99f1806978009e27aaa059228aa9")
-TWILIO_AUTH_TOKEN   = os.getenv("TWILIO_AUTH_TOKEN",    "fd943dd5fdbc626701d790c6c306dc36")
-TWILIO_FROM_NUMBER  = os.getenv("TWILIO_FROM_NUMBER",   "+19152283121")
+TWILIO_ACCOUNT_SID  = os.getenv("TWILIO_ACCOUNT_SID",  "AC79axxxxxx59228aa9")
+TWILIO_AUTH_TOKEN   = os.getenv("TWILIO_AUTH_TOKEN",    "fd943xxxxxxxxadsa0c6c306dc36")
+TWILIO_FROM_NUMBER  = os.getenv("TWILIO_FROM_NUMBER",   "+191xxxxxxx")
 
 # ── Gmail SMTP (email) ────────────────────────────────────────────
-GMAIL_ADDRESS       = os.getenv("GMAIL_ADDRESS",        "lakshmideepakb@gmail.com")
-GMAIL_APP_PASSWORD  = os.getenv("GMAIL_APP_PASSWORD",   "jxtk wadn dvoy guvc")
+GMAIL_ADDRESS       = os.getenv("GMAIL_ADDRESS",        "xxxxxx@gmail.com")
+GMAIL_APP_PASSWORD  = os.getenv("GMAIL_APP_PASSWORD",   "xxxx xxxx xxxx xxx")
 
-# - Test Mobile----------
-TEST_MOBILE         = os.getenv("TEST_MOBILE",         "+919176960154")
 # ── Groq (Whisper transcription + LLM) ───────────────────────────
-GROQ_API_KEY        = os.getenv("GROQ_API_KEY",         "gsk_REDACTED")
-
+GROQ_API_KEY        = os.getenv("GROQ_API_KEY")
 # ── LLM model ────────────────────────────────────────────────────
 LLM_MODEL           = "llama-3.3-70b-versatile"   # free on Groq, fast and accurate
 LLM_TEMPERATURE     = 0                   # deterministic — same input = same decision

@@ -42,8 +42,7 @@ from langgraph.graph import StateGraph, END
 from config import (
     TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER,
     GMAIL_ADDRESS, GMAIL_APP_PASSWORD,
-    GROQ_API_KEY, LLM_MODEL, LLM_TEMPERATURE,
-    BIRTH_CUTOFF, TERM_DATE_CUTOFF,
+    GROQ_API_KEY, BIRTH_CUTOFF, TERM_DATE_CUTOFF,
     INPUT_FILE, OUTPUT_FILE,
 )
 
@@ -98,14 +97,12 @@ def make_call_tool(phone: str, name: str) -> str:
 
     twiml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Pause length="2"/>
     <Say voice="Polly.Joanna">
         Hello {name}. This is an automated HR call.
         Please speak about your current availability after the beep.
         Your response will be recorded.
     </Say>
-    <Record maxLength="60" timeout="5" finishOnKey="" playBeep="true"/>
-    <Say>Thank you for your response. Goodbye.</Say>
+    <Record maxLength="50" timeout="5" finishOnKey="" playBeep="true"/>
 </Response>"""
 
     print(f"     [make_call_tool] Calling {name} at {phone}...")
@@ -168,6 +165,7 @@ def make_call_tool(phone: str, name: str) -> str:
     transcript = _transcribe(recording_url)
     _tool_results["phone_call_status"]  = "Completed"
     _tool_results["phone_conversation"] = transcript
+    print(f"     ✅ Phone conversation captured: {transcript}")
     return f"Call completed. Transcript: {transcript}"
 
 
@@ -289,12 +287,12 @@ def filter_node(state: EmployeeState) -> EmployeeState:
     Skips ineligible records before any LLM cost is incurred.
     """
     if pd.isna(state["birth_date"]) or state["birth_date"] <= BIRTH_CUTOFF:
-        # print(f"  -- {state['name']} | born before 2000, skip")
+       # print(f"  -- {state['name']} | born before 2000, skip")
         return {**state, "next": "skip"}
 
     is_terminated = (state["term_code"] == 152) or (state["term_date"] is not None)
     if not is_terminated:
-        # print(f"  -- {state['name']} | not terminated, skip")
+       # print(f"  -- {state['name']} | not terminated, skip")
         return {**state, "next": "skip"}
 
     return {**state, "next": "router"}
@@ -344,14 +342,15 @@ def contact_node(state: EmployeeState) -> EmployeeState:
         "phone": state["phone"],
         "name":  state["name"],
     })
-    print(f"     Call result: {call_result}")
+    print(f"     Phone call status : {_tool_results.get('phone_call_status', 'unknown')}")
+    print(f"     Transcript        : {_tool_results.get('phone_conversation', '(none)')}")
 
     # Step 2: Email (tool invoked directly — not via LLM)
     email_result = send_email_tool.invoke({
         "to_email": state["email"],
         "name":     state["name"],
     })
-    print(f"     Email result: {email_result}")
+    print(f"     Email sent        : {_tool_results.get('email_sent', 'No')}")
 
     return {
         **state,

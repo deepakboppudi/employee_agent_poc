@@ -163,13 +163,13 @@ export GMAIL_APP_PASSWORD="xxxx xxxx xxxx xxxx"
 
 ```bash
 # Run full flow
-python main.py
+python main_graph.py
 
 # Test email only
-python main.py --test-email
+python main_graph.py --test-email
 
 # Test call only
-python main.py --test-call
+python main_graph.py --test-call
 ```
 
 ### Expected output
@@ -206,7 +206,7 @@ Done! Output: sample_data.xlsx
 
 ```
 your-folder/
-├── main.py              # Agent logic — LangGraph graph + LangChain tools
+├── main_graph.py        # Agent logic — LangGraph graph + LangChain tools
 ├── config.py            # Credentials and settings (add to .gitignore)
 ├── sample_data.xlsx     # Input Excel file
 ├── architecture.drawio  # Draw.io architecture diagram
