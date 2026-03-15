@@ -37,14 +37,14 @@ TWILIO_ACCOUNT_SID  = os.getenv("TWILIO_ACCOUNT_SID",  "ACxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN   = os.getenv("TWILIO_AUTH_TOKEN",   "your_auth_token")
 TWILIO_FROM_NUMBER  = os.getenv("TWILIO_FROM_NUMBER",  "+1XXXXXXXXXX")
 
-GMAIL_ADDRESS       = os.getenv("GMAIL_ADDRESS",       "your-email@gmail.com")
+GMAIL_ADDRESS       = os.getenv("GMAIL_ADDRESS",       "your-email@gmail.com")  # used as From address
 GMAIL_APP_PASSWORD  = os.getenv("GMAIL_APP_PASSWORD",  "xxxx xxxx xxxx xxxx")
+
+# Mailtrap - catches all test emails safely, nothing sent to real people
 
 GROQ_API_KEY        = os.getenv("GROQ_API_KEY",        "gsk_xxxxxxxxxxxxxxxxxxxxxxxxxx")
 
 # ── Test targets ──────────────────────────────────────────────────
-TEST_PHONE = "+91XXXXXXXXXX"
-TEST_EMAIL = "your-email@gmail.com"
 
 INPUT_FILE  = "sample_data.xlsx"
 OUTPUT_FILE = "sample_data.xlsx"   # write results back into the same input file
@@ -88,30 +88,31 @@ def transcribe_with_whisper(recording_url: str) -> str:
     print("     Sending to Groq Whisper for transcription...")
 
     # Retry up to 3 times — handles Groq 503 temporary overload spikes
-    for attempt in range(1, 4):
-        try:
-            with open(tmp_file, "rb") as audio_file:
-                result = client.audio.transcriptions.create(
-                    model="whisper-large-v3",   # best accuracy, completely free on Groq
-                    file=audio_file,
-                    language="en"
-                )
-            transcript = result.text
-            print(f"     ✅ Groq Whisper transcript: {transcript}")
-            return transcript
+    try:
+        for attempt in range(1, 4):
+            try:
+                with open(tmp_file, "rb") as audio_file:
+                    result = client.audio.transcriptions.create(
+                        model="whisper-large-v3",   # best accuracy, completely free on Groq
+                        file=audio_file,
+                        language="en"
+                    )
+                transcript = result.text
+                print(f"     ✅ Groq Whisper transcript: {transcript}")
+                return transcript
 
-        except Exception as e:
-            if "503" in str(e) and attempt < 3:
-                wait = attempt * 10   # wait 10s, then 20s before retrying
-                print(f"     ⚠️  Groq unavailable (attempt {attempt}/3), retrying in {wait}s...")
-                time.sleep(wait)
-            else:
-                print(f"     ❌ Groq Whisper error: {e}")
-                return f"Transcription error: {e}"
+            except Exception as e:
+                if "503" in str(e) and attempt < 3:
+                    wait = attempt * 10   # wait 10s, then 20s before retrying
+                    print(f"     ⚠️  Groq unavailable (attempt {attempt}/3), retrying in {wait}s...")
+                    time.sleep(wait)
+                else:
+                    print(f"     ❌ Groq Whisper error: {e}")
+                    return f"Transcription error: {e}"
 
-        finally:
-            if os.path.exists(tmp_file):
-                os.remove(tmp_file)
+    finally:
+        if os.path.exists(tmp_file):
+            os.remove(tmp_file)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -119,19 +120,22 @@ def transcribe_with_whisper(recording_url: str) -> str:
 # ─────────────────────────────────────────────────────────────────
 def make_call_and_transcribe(to_number: str, person_name: str) -> dict:
     """
-    1. Places outbound Twilio call
-    2. Plays HR prompt → records spoken response (finishOnKey="" prevents keypress ending it)
-    3. Downloads the MP3 recording
-    4. Transcribes via OpenAI Whisper (accurate for all accents)
+    Places outbound call → records spoken response → transcribes via Groq Whisper.
+    Returns: { call_status, transcript }
+
+    call_status values:
+      Completed   - call answered and response recorded
+      No Answer   - phone rang but not picked up
+      Busy        - line was busy
+      Failed      - call could not be placed
     """
     from twilio.rest import Client
     client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
-    # <Pause> waits after the Twilio trial disclaimer + keypress
-    # finishOnKey="" — no key ends the recording, only silence/timeout does
+    # NOTE: <Say> after <Record> is removed intentionally
+    # It was being captured by the recording and transcribed as "Thank you"
     twiml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Pause length="2"/>
     <Say voice="Polly.Joanna">
         Hello {person_name}. This is an automated HR call.
         Please speak about your current availability after the beep.
@@ -143,17 +147,13 @@ def make_call_and_transcribe(to_number: str, person_name: str) -> dict:
         finishOnKey=""
         playBeep="true"
     />
-    <Say>Thank you for your response. Goodbye.</Say>
 </Response>"""
 
-    # Note: removed transcribe="true" — Whisper handles this now
-
     print(f"\n  📞 Calling {person_name} at {to_number}...")
-    print(f"     Tip: Hear trial disclaimer → wait → hear prompt → speak after beep")
     call = client.calls.create(twiml=twiml, to=to_number, from_=TWILIO_FROM_NUMBER)
     print(f"     Call SID: {call.sid}")
 
-    # Poll until call ends
+    # Poll until call ends (max 2 mins)
     for _ in range(24):
         time.sleep(5)
         call = client.calls(call.sid).fetch()
@@ -161,9 +161,18 @@ def make_call_and_transcribe(to_number: str, person_name: str) -> dict:
         if call.status in ("completed", "failed", "busy", "no-answer"):
             break
 
+    # Map each Twilio status to our Excel column value
+    status_map = {
+        "completed": "Completed",
+        "no-answer": "No Answer",
+        "busy":      "Busy",
+        "failed":    "Failed",
+    }
+    call_status = status_map.get(call.status, call.status.title())
+
     if call.status != "completed":
-        print(f"     ⚠️  Call ended as: {call.status}")
-        return {"call_status": "No Answer", "transcript": ""}
+        print(f"     ⚠️  Call ended as: {call_status}")
+        return {"call_status": call_status, "transcript": ""}
 
     # Wait for Twilio to finalise the recording
     print("     Waiting for recording to be ready...")
@@ -172,24 +181,29 @@ def make_call_and_transcribe(to_number: str, person_name: str) -> dict:
     # Fetch recording
     recordings = client.recordings.list(call_sid=call.sid, limit=1)
     if not recordings:
-        print("     ⚠️  No recording found")
+        print("     ⚠️  No recording found — person may not have spoken")
         return {"call_status": "Completed", "transcript": "No speech recorded"}
 
     rec = recordings[0]
-    # Build the direct MP3 download URL
-    recording_url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Recordings/{rec.sid}.mp3"
-    print(f"     Recording SID: {rec.sid}")
 
-    # Transcribe with Whisper
+    # Check recording duration — very short = voicemail/silence, not a real response
+    # Twilio duration is in seconds
+    duration = int(rec.duration) if rec.duration else 0
+    if duration < 2:
+        print(f"     ⚠️  Recording too short ({duration}s) — no real response captured")
+        return {"call_status": "Completed", "transcript": "No response spoken"}
+
+    print(f"     Recording SID: {rec.sid} | Duration: {duration}s")
+    recording_url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Recordings/{rec.sid}.mp3"
+
+    # Transcribe with Groq Whisper
     transcript = transcribe_with_whisper(recording_url)
     return {"call_status": "Completed", "transcript": transcript}
 
 
-# ─────────────────────────────────────────────────────────────────
-# EMAIL AGENT
-# ─────────────────────────────────────────────────────────────────
 def send_email(to_email: str, person_name: str) -> dict:
-    """Sends personalised email via Gmail SMTP (port 587, STARTTLS)."""
+    """Sends personalised email via Gmail SMTP with port fallback."""
+
     subject   = f"Hi {person_name} - Employment Status Follow-up"
     body_text = (
         f"Hi {person_name},\n\n"
@@ -210,52 +224,34 @@ def send_email(to_email: str, person_name: str) -> dict:
     print(f"  📧 Sending email to {person_name} ({to_email})...")
     print(f"     Gmail: {GMAIL_ADDRESS} | App password set: {'Yes' if 'xxxx' not in GMAIL_APP_PASSWORD else '❌ NOT SET'}")
 
-    # Try port 587 (STARTTLS) first, fall back to port 465 (SSL) if blocked
-    # Error 10060 = connection timed out, usually means port 587 is blocked by network/firewall
-    attempts = [
-        ("587 STARTTLS", lambda: _send_587(GMAIL_ADDRESS, GMAIL_APP_PASSWORD, to_email, msg)),
-        ("465 SSL",      lambda: _send_465(GMAIL_ADDRESS, GMAIL_APP_PASSWORD, to_email, msg)),
-    ]
-
-    for label, send_fn in attempts:
+    # Try port 587 (STARTTLS) first, fall back to 465 (SSL) if network blocks 587
+    for port, use_ssl in [(587, False), (465, True)]:
         try:
-            print(f"     Trying port {label}...")
-            send_fn()
-            print("     ✅ Email sent successfully")
+            if use_ssl:
+                server = smtplib.SMTP_SSL("smtp.gmail.com", port, timeout=15)
+            else:
+                server = smtplib.SMTP("smtp.gmail.com", port, timeout=15)
+                server.ehlo()
+                server.starttls()
+            server.ehlo()
+            server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
+            server.sendmail(GMAIL_ADDRESS, to_email, msg.as_string())
+            server.quit()
+            print(f"     ✅ Email sent successfully via port {port}")
             return {"email_sent": "Yes", "email_text": body_text}
+
         except smtplib.SMTPAuthenticationError as e:
             print(f"     ❌ Auth failed: {e}")
             print("     → Use App Password from https://myaccount.google.com/apppasswords")
-            return {"email_sent": "No", "email_text": ""}   # no point retrying auth errors
+            return {"email_sent": "No", "email_text": ""}  # no point retrying
         except Exception as e:
-            print(f"     ⚠️  Port {label} failed: {e}")
-            continue   # try next port
+            print(f"     ⚠️  Port {port} failed: {e}, trying next...")
+            continue
 
     print("     ❌ Email failed on all ports")
     return {"email_sent": "No", "email_text": ""}
 
 
-def _send_587(gmail_address, app_password, to_email, msg):
-    """STARTTLS on port 587"""
-    with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(gmail_address, app_password)
-        server.sendmail(gmail_address, to_email, msg.as_string())
-
-
-def _send_465(gmail_address, app_password, to_email, msg):
-    """SSL on port 465 — works when port 587 is blocked"""
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as server:
-        server.ehlo()
-        server.login(gmail_address, app_password)
-        server.sendmail(gmail_address, to_email, msg.as_string())
-
-
-# ─────────────────────────────────────────────────────────────────
-# WRITE NEW COLUMNS INTO EXISTING FILE  (preserves all original data + formatting)
-# ─────────────────────────────────────────────────────────────────
 def save_to_excel(df: pd.DataFrame):
     """
     Opens the original file with openpyxl and ONLY appends new columns.
@@ -342,12 +338,16 @@ def process_records():
             print(f"  ✅ {name} → Terminated after 2023, initiating call + email")
 
             # AI Agent 1: Make the call and collect information
-            call_result = make_call_and_transcribe(TEST_PHONE, name)  # swap → row["WORK_PHONE"] for production
+            # AI Agent 1: Make the call using real phone number from Excel
+            phone = str(row["WORK_PHONE"]).strip()
+            call_result = make_call_and_transcribe(phone, name)
             df.at[idx, "PHONE_CALL_STATUS"]  = call_result["call_status"]
             df.at[idx, "PHONE_CONVERSATION"] = call_result["transcript"]
 
             # AI Agent 2: Email the person "Hi"
-            email_result = send_email(TEST_EMAIL, name)   # swap → row["EMAIL"] for production
+            # AI Agent 2: Email using real email from Excel (lands in Mailtrap)
+            email = str(row["EMAIL"]).strip()
+            email_result = send_email(email, name)
             df.at[idx, "EMAIL_SENT"] = email_result["email_sent"]
             df.at[idx, "EMAIL_TEXT"] = email_result["email_text"]
 
@@ -368,10 +368,11 @@ def process_records():
 if __name__ == "__main__":
     if "--test-email" in sys.argv:
         print("=== EMAIL TEST ===")
-        send_email(TEST_EMAIL, "Test User")
+        send_email("test@example.com", "Test User")
     elif "--test-call" in sys.argv:
         print("=== CALL TEST ===")
-        result = make_call_and_transcribe(TEST_PHONE, "Test User")
+        test_phone = input("Enter phone number to test (+91XXXXXXXXXX): ").strip()
+        result = make_call_and_transcribe(test_phone, "Test User")
         print(f"\nFinal result: {result}")
     else:
         process_records()
