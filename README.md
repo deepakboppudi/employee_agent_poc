@@ -258,7 +258,6 @@ __pycache__/
 
 | Error | Cause | Fix |
 |---|---|---|
-| `model_decommissioned` | Groq model removed | Update `LLM_MODEL` in `config.py` to `llama-3.3-70b-versatile` |
 | `SMTP error 10060` | Port 587 blocked | Code auto-retries on port 465 |
 | `SMTPAuthenticationError` | Wrong App Password | Regenerate at myaccount.google.com/apppasswords |
 | `Groq 503` | Temporary overload | Code auto-retries 3 times with backoff |
