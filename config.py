@@ -16,9 +16,6 @@ GMAIL_APP_PASSWORD  = os.getenv("GMAIL_APP_PASSWORD",   "xxxx xxxx xxxx xxx")
 # ── Groq (Whisper transcription + LLM) ───────────────────────────
 GROQ_API_KEY        = os.getenv("GROQ_API_KEY")
 
-LLM_MODEL           = "llama-3.3-70b-versatile"   # free on Groq, fast and accurate
-LLM_TEMPERATURE     = 0                   # deterministic — same input = same decision
-
 # ── Business rules ────────────────────────────────────────────────
 from datetime import datetime
 BIRTH_CUTOFF        = datetime(2000, 1, 1)   # process only born after this date
