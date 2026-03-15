@@ -5,19 +5,16 @@ config.py — All credentials and settings in one place.
 import os
 
 # ── Twilio (phone calls) ──────────────────────────────────────────
-TWILIO_ACCOUNT_SID  = os.getenv("TWILIO_ACCOUNT_SID",  "AC79axxxxxx59228aa9")
-TWILIO_AUTH_TOKEN   = os.getenv("TWILIO_AUTH_TOKEN",    "fd943xxxxxxxxadsa0c6c306dc36")
-TWILIO_FROM_NUMBER  = os.getenv("TWILIO_FROM_NUMBER",   "+191xxxxxxx")
+TWILIO_ACCOUNT_SID  = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN   = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_FROM_NUMBER  = os.getenv("TWILIO_FROM_NUMBER")
 
 # ── Gmail SMTP (email) ────────────────────────────────────────────
-GMAIL_ADDRESS       = os.getenv("GMAIL_ADDRESS",        "xxxxxx@gmail.com")
-GMAIL_APP_PASSWORD  = os.getenv("GMAIL_APP_PASSWORD",   "xxxx xxxx xxxx xxx")
+GMAIL_ADDRESS       = os.getenv("GMAIL_ADDRESS")
+GMAIL_APP_PASSWORD  = os.getenv("GMAIL_APP_PASSWORD")
 
 # ── Groq (Whisper transcription + LLM) ───────────────────────────
 GROQ_API_KEY        = os.getenv("GROQ_API_KEY")
-
-LLM_MODEL           = "llama-3.3-70b-versatile"   # free on Groq, fast and accurate
-LLM_TEMPERATURE     = 0                   # deterministic — same input = same decision
 
 # ── Business rules ────────────────────────────────────────────────
 from datetime import datetime

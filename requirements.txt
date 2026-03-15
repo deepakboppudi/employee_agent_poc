@@ -6,4 +6,5 @@ langchain
 langgraph
 langchain-groq
 langchain-core
+dotenv
 

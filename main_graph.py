@@ -38,6 +38,9 @@ from email.mime.multipart import MIMEMultipart
 from langchain_core.tools import tool
 from langgraph.graph import StateGraph, END
 
+import dotenv
+dotenv.load_dotenv()  # Load credentials from .env file
+
 # All credentials and settings from config.py
 from config import (
     TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER,
@@ -102,7 +105,7 @@ def make_call_tool(phone: str, name: str) -> str:
         Please speak about your current availability after the beep.
         Your response will be recorded.
     </Say>
-    <Record maxLength="50" timeout="5" finishOnKey="" playBeep="true"/>
+    <Record maxLength="60" timeout="5" finishOnKey="" playBeep="true"/>
 </Response>"""
 
     print(f"     [make_call_tool] Calling {name} at {phone}...")
@@ -263,7 +266,6 @@ def _transcribe(recording_url: str) -> str:
                         file=audio,
                         language="en"
                     )
-                print(f"     Transcript: {result.text}")
                 return result.text
             except Exception as e:
                 if "503" in str(e) and attempt < 3:
@@ -287,12 +289,12 @@ def filter_node(state: EmployeeState) -> EmployeeState:
     Skips ineligible records before any LLM cost is incurred.
     """
     if pd.isna(state["birth_date"]) or state["birth_date"] <= BIRTH_CUTOFF:
-       # print(f"  -- {state['name']} | born before 2000, skip")
+        # print(f"  -- {state['name']} | born before 2000, skip")
         return {**state, "next": "skip"}
 
     is_terminated = (state["term_code"] == 152) or (state["term_date"] is not None)
     if not is_terminated:
-       # print(f"  -- {state['name']} | not terminated, skip")
+        # print(f"  -- {state['name']} | not terminated, skip")
         return {**state, "next": "skip"}
 
     return {**state, "next": "router"}
@@ -308,7 +310,7 @@ def router_node(state: EmployeeState) -> EmployeeState:
         print(f"  >> {state['name']} | terminated after 2023 → calling + emailing")
         return {**state, "next": "llm_agent"}
 
-    print(f"  DQ >> {state['name']} | terminated before 2023 → disqualify")
+    print(f"  DQ {state['name']} | terminated before 2023 → disqualify")
     return {**state, "next": "disqualify"}
 
 
@@ -333,7 +335,15 @@ def contact_node(state: EmployeeState) -> EmployeeState:
     Direct invocation prevents the ReAct agent from calling tools repeatedly.
     """
     global _tool_results
-    _tool_results = {}   # reset for this employee
+    # Reset ALL keys explicitly — prevents stale data from previous employee
+    # leaking into this record if a tool path is skipped (e.g. No Answer)
+    _tool_results = {
+        "phone_call_status":  "",
+        "phone_conversation": "",
+        "email_sent":         "",
+        "email_text":         "",
+        "status":             "",
+    }
 
     print(f"\n  >> Contacting {state['name']}")
 
@@ -432,6 +442,12 @@ def save_results_to_excel(results: list):
             next_col += 1
 
     for res in results:
+        # Only write rows that were actually processed (contacted or DQ)
+        # Skipped rows (born before 2000 / not terminated) have all fields empty
+        was_processed = res.get("status") != "" or res.get("phone_call_status") != ""
+        if not was_processed:
+            continue
+
         excel_row = res["row_index"] + 2
         for col_name, key in [
             ("STATUS",             "status"),
@@ -441,8 +457,8 @@ def save_results_to_excel(results: list):
             ("PHONE_CONVERSATION", "phone_conversation"),
         ]:
             value = res.get(key, "")
-            if value:
-                ws.cell(row=excel_row, column=col_map[col_name], value=value)
+            # Write value always — None clears old stale cell content (e.g. No Answer clears old transcript)
+            ws.cell(row=excel_row, column=col_map[col_name], value=value if value else None)
 
     wb.save(OUTPUT_FILE)
     print(f"\n  Results written to {OUTPUT_FILE}")
