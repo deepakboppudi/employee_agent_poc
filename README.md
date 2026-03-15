@@ -176,20 +176,47 @@ python main_graph.py --test-call
 
 ```
 Reading Excel file...
-  Loaded 20 records
+  Loaded 19 records
 
-  -- Gunter Erler        | born before 2000, skip
-  -- Maria Iacobucci     | born before 2000, skip
-  DQ Dale Fowler         | terminated before 2023 → disqualify
-  >> Frank Fuhlroth      | terminated after 2023 → calling + emailing
+  >> Frank Fuhlroth | terminated after 2023 → calling + emailing
 
   >> Contacting Frank Fuhlroth
-     [make_call_tool] Calling Frank Fuhlroth at +1...
+     [make_call_tool] Calling Frank Fuhlroth at +919176960154...
      Call status: ringing
+     Call status: ringing
+     Call status: in-progress
+     Call status: in-progress
+     Call status: in-progress
+     Call status: in-progress
      Call status: completed
-     Transcript: I am available next week for a discussion.
-     [send_email_tool] Emailing Frank Fuhlroth at FFuhlroth@...
+     Transcript:  I appreciate it. Thank you.
+     ✅ Phone conversation captured:  I appreciate it. Thank you.
+     Phone call status : Completed
+     Transcript        :  I appreciate it. Thank you.
+     [send_email_tool] Emailing Frank Fuhlroth at deepak.boppudi@gmail.com...
      Email sent via port 587
+     Email sent        : Yes
+  >> Ken Chambers | terminated after 2023 → calling + emailing
+
+  >> Contacting Ken Chambers
+     [make_call_tool] Calling Ken Chambers at +919176960154...
+     Call status: ringing
+     Call status: ringing
+     Call status: ringing
+     Call status: in-progress
+     Call status: in-progress
+     Call status: in-progress
+     Call status: completed
+     Transcript:  I'm available thank you
+     ✅ Phone conversation captured:  I'm available thank you
+     Phone call status : Completed
+     Transcript        :  I'm available thank you
+     [send_email_tool] Emailing Ken Chambers at deepak.boppudi@gmail.com...
+     Email sent via port 587
+     Email sent        : Yes
+  DQ >> Dale Fowler | terminated before 2023 → disqualify
+
+  Results written to sample_data.xlsx
 
 ==================================================
 Done! Output: sample_data.xlsx
