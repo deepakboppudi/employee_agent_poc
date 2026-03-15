@@ -1,4 +1,4 @@
-# Employee Agent POC - Setup Guide
+# Employee Agent POC using Python - Setup Guide
 
 ## What this does
 
